@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package orchestrator;
+
+option go_package = "github.com/dheeraj-sn/distributed-orchestrator/proto";
+
+service Orchestrator {
+  rpc SubmitTask (SubmitTaskRequest) returns (SubmitTaskResponse) {}
+  rpc GetTaskStatus (GetTaskStatusRequest) returns (GetTaskStatusResponse) {}
+}
+
+message SubmitTaskRequest {
+  string task_type = 1;
+  repeated string args = 2;
+}
+
+message SubmitTaskResponse {
+  string task_id = 1;
+}
+
+message GetTaskStatusRequest {
+  string task_id = 1;
+}
+
+message GetTaskStatusResponse {
+  string task_id = 1;
+  string status = 2;
+  string error = 3;
+} 

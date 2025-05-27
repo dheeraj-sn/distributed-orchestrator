@@ -1,0 +1,28 @@
+scheduler:
+  host: "localhost:8080"
+  metrics_port: 9090
+
+worker:
+  host: "localhost:8081"
+  metrics_port: 9091
+  concurrency: 4
+
+retry:
+  max_attempts: 3
+  initial_backoff: "1s"
+  max_backoff: "1m"
+
+logging:
+  level: "debug"
+  format: "json"
+
+storage:
+  backend: "memory"
+  # Uncomment for PostgreSQL
+  # backend: "postgres"
+  # postgres:
+  #   host: "localhost"
+  #   port: 5432
+  #   database: "orchestrator"
+  #   user: "postgres"
+  #   password: "postgres" 
