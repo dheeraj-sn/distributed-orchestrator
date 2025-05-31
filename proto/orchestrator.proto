@@ -2,28 +2,51 @@ syntax = "proto3";
 
 package orchestrator;
 
-option go_package = "github.com/dheeraj-sn/distributed-orchestrator/proto";
+option go_package = "distributed-orchestrator/proto";
 
-service Orchestrator {
-  rpc SubmitTask (SubmitTaskRequest) returns (SubmitTaskResponse) {}
-  rpc GetTaskStatus (GetTaskStatusRequest) returns (GetTaskStatusResponse) {}
-}
-
-message SubmitTaskRequest {
-  string task_type = 1;
+// A job submitted by a client
+message JobRequest {
+  string task = 1;
   repeated string args = 2;
 }
 
-message SubmitTaskResponse {
-  string task_id = 1;
+// Job ID response
+message JobResponse {
+  string job_id = 1;
 }
 
-message GetTaskStatusRequest {
-  string task_id = 1;
+// Job status query
+message JobStatusRequest {
+  string job_id = 1;
 }
 
-message GetTaskStatusResponse {
-  string task_id = 1;
-  string status = 2;
-  string error = 3;
-} 
+message JobStatusResponse {
+  string status = 1;
+}
+
+// Worker registration
+message RegisterWorkerRequest {
+  string worker_id = 1;
+  string host = 2;
+}
+
+message RegisterWorkerResponse {
+  bool success = 1;
+}
+
+// Heartbeat
+message HeartbeatRequest {
+  string worker_id = 1;
+}
+
+message HeartbeatResponse {
+  bool alive = 1;
+}
+
+// Service definition
+service Orchestrator {
+  rpc SubmitJob(JobRequest) returns (JobResponse);
+  rpc GetJobStatus(JobStatusRequest) returns (JobStatusResponse);
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
