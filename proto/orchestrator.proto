@@ -22,6 +22,7 @@ message JobStatusRequest {
 
 message JobStatusResponse {
   string status = 1;
+  string result = 2; // new: optional job result
 }
 
 // Worker registration
@@ -43,10 +44,36 @@ message HeartbeatResponse {
   bool alive = 1;
 }
 
+// New: Job pulling
+message PullJobRequest {
+  string worker_id = 1;
+}
+
+message PullJobResponse {
+  string job_id = 1;
+  string task = 2;
+  repeated string args = 3;
+  bool found = 4;
+}
+
+// New: Job completion
+message CompleteJobRequest {
+  string job_id = 1;
+  string result = 2;
+}
+
+message CompleteJobResponse {
+  bool success = 1;
+}
+
 // Service definition
 service Orchestrator {
   rpc SubmitJob(JobRequest) returns (JobResponse);
   rpc GetJobStatus(JobStatusRequest) returns (JobStatusResponse);
   rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
   rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // New methods for worker pull-complete flow
+  rpc PullJob(PullJobRequest) returns (PullJobResponse);
+  rpc CompleteJob(CompleteJobRequest) returns (CompleteJobResponse);
 }
