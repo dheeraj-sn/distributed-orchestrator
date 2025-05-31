@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "distributed-orchestrator/proto"
+	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 
 	"go.uber.org/zap"
 
@@ -33,8 +33,8 @@ func NewWorker(id, host string, conn *grpc.ClientConn, logger *zap.Logger) *Work
 
 func (w *Worker) Register() error {
 	_, err := w.Client.RegisterWorker(context.Background(), &pb.RegisterWorkerRequest{
-		Worker_id: w.ID,
-		Host:      w.Host,
+		WorkerId: w.ID,
+		Host:     w.Host,
 	})
 	if err == nil {
 		w.Logger.Info("Worker registered", zap.String("id", w.ID))
@@ -49,7 +49,7 @@ func (w *Worker) StartHeartbeat(interval time.Duration) {
 			select {
 			case <-ticker.C:
 				w.Client.SendHeartbeat(context.Background(), &pb.HeartbeatRequest{
-					Worker_id: w.ID,
+					WorkerId: w.ID,
 				})
 			case <-w.stopChan:
 				ticker.Stop()
@@ -84,13 +84,13 @@ func (w *Worker) StartExecutorLoop(pollInterval time.Duration) {
 			time.Sleep(pollInterval)
 
 			resp, err := w.Client.PullJob(context.Background(), &pb.PullJobRequest{
-				Worker_id: w.ID,
+				WorkerId: w.ID,
 			})
 			if err != nil || !resp.Found {
 				continue
 			}
 
-			jobID := resp.Job_id
+			jobID := resp.JobId
 			task := resp.Task
 			args := resp.Args
 
@@ -101,7 +101,7 @@ func (w *Worker) StartExecutorLoop(pollInterval time.Duration) {
 			time.Sleep(2 * time.Second) // Simulate work
 
 			_, err = w.Client.CompleteJob(context.Background(), &pb.CompleteJobRequest{
-				Job_id: jobID,
+				JobId:  jobID,
 				Result: result,
 			})
 			if err != nil {
