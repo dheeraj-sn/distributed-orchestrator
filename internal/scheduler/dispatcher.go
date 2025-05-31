@@ -1,17 +1,37 @@
 package scheduler
 
-// Dispatcher handles task distribution to workers
+import (
+	"go.uber.org/zap"
+)
+
 type Dispatcher struct {
-	// TODO: Add dispatcher configuration
+	JobQueue   chan string
+	JobManager *JobManager
+	Logger     *zap.Logger
 }
 
-// NewDispatcher creates a new task dispatcher
-func NewDispatcher() *Dispatcher {
-	return &Dispatcher{}
+func NewDispatcher(jm *JobManager, logger *zap.Logger) *Dispatcher {
+	return &Dispatcher{
+		JobQueue:   make(chan string, 100),
+		JobManager: jm,
+		Logger:     logger,
+	}
 }
 
-// Dispatch sends a task to an available worker
-func (d *Dispatcher) Dispatch(task interface{}) error {
-	// TODO: Implement task dispatching logic
-	return nil
-} 
+func (d *Dispatcher) Run() {
+	go func() {
+		for jobID := range d.JobQueue {
+			job, ok := d.JobManager.Get(jobID)
+			if !ok {
+				continue
+			}
+
+			d.Logger.Info("Dispatching job", zap.String("job_id", jobID), zap.String("task", job.Task))
+
+			// Simulate local execution (replace with remote worker call later)
+			d.JobManager.SetStatus(jobID, "completed")
+
+			d.Logger.Info("Job completed", zap.String("job_id", jobID))
+		}
+	}()
+}

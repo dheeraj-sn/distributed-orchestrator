@@ -3,50 +3,47 @@ package main
 import (
 	"net"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+
+	"distributed-orchestrator/internal/scheduler"
+	pb "distributed-orchestrator/proto"
 )
 
 func main() {
-	// Setup logger
-	logger, _ := zap.NewProduction()
+	// Logger setup
+	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
 
-	// Load config
-	viper.SetConfigName("dev")
-	viper.AddConfigPath("config")
-	if err := viper.ReadInConfig(); err != nil {
-		logger.Fatal("Failed to read config", zap.Error(err))
+	// Read port from env or use default
+	port := os.Getenv("SCHEDULER_PORT")
+	if port == "" {
+		port = "50051"
 	}
+	addr := ":" + port
 
-	addr := viper.GetString("scheduler.host")
-	logger.Info("Starting scheduler", zap.String("address", addr))
-
+	// Start TCP listener
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.Fatal("Failed to listen", zap.Error(err))
 	}
+	logger.Info("Scheduler listening", zap.String("addr", addr))
 
+	// gRPC server
 	grpcServer := grpc.NewServer()
 
-	// TODO: implement and register your scheduler service here
-	// pb.RegisterOrchestratorServer(grpcServer, &SchedulerServer{})
+	// Initialize scheduler logic
+	srv := scheduler.NewSchedulerServer(logger)
 
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			logger.Fatal("Failed to serve gRPC", zap.Error(err))
-		}
-	}()
+	// Register gRPC service
+	pb.RegisterOrchestratorServer(grpcServer, srv)
 
-	// Graceful shutdown on SIGINT/SIGTERM
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
+	// Start job dispatcher in background
+	srv.Dispatcher.Run()
 
-	logger.Info("Shutting down scheduler")
-	grpcServer.GracefulStop()
+	// Serve
+	if err := grpcServer.Serve(lis); err != nil {
+		logger.Fatal("Failed to serve", zap.Error(err))
+	}
 }

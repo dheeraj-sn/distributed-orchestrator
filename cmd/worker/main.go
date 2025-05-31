@@ -1,47 +1,43 @@
 package main
 
 import (
+	"log"
 	"os"
-	"os/signal"
-	"syscall"
+	"time"
 
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	pb "distributed-orchestrator/proto"
+	"distributed-orchestrator/internal/worker"
 )
 
 func main() {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	logger, _ := zap.NewDevelopment()
 
-	viper.SetConfigName("dev")
-	viper.AddConfigPath("config")
-	if err := viper.ReadInConfig(); err != nil {
-		logger.Fatal("Failed to read config", zap.Error(err))
+	workerID := os.Getenv("WORKER_ID")
+	if workerID == "" {
+		workerID = "worker-1"
 	}
 
-	addr := viper.GetString("worker.host")
-	logger.Info("Starting worker", zap.String("address", addr))
-
-	// TODO: connect to scheduler gRPC endpoint and register worker
-	schedulerAddr := viper.GetString("scheduler.host")
+	schedulerAddr := os.Getenv("SCHEDULER_ADDR")
+	if schedulerAddr == "" {
+		schedulerAddr = "localhost:50051"
+	}
 
 	conn, err := grpc.Dial(schedulerAddr, grpc.WithInsecure())
 	if err != nil {
-		logger.Fatal("Failed to connect to scheduler", zap.Error(err))
+		log.Fatalf("Failed to connect to scheduler: %v", err)
 	}
 	defer conn.Close()
 
-	client := pb.NewOrchestratorClient(conn)
+	w := worker.NewWorker(workerID, "localhost", conn, logger)
 
-	// TODO: implement worker registration and heartbeat logic here
+	if err := w.Register(); err != nil {
+		log.Fatalf("Registration failed: %v", err)
+	}
 
-	// Wait for shutdown signal
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
+	w.StartHeartbeat(10 * time.Second)
+	w.StartMockExecutor()
 
-	logger.Info("Shutting down worker")
+	select {} // block forever
 }
