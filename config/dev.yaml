@@ -1,9 +1,9 @@
 scheduler:
-  host: "localhost:8080"
+  host: "localhost:50051"
   metrics_port: 9090
 
 worker:
-  host: "localhost:8081"
+  host: "localhost:50052"
   metrics_port: 9091
   concurrency: 4
 

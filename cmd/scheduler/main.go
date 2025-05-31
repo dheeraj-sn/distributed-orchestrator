@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net"
 	"os"
 
@@ -9,26 +10,22 @@ import (
 
 	"github.com/dheeraj-sn/distributed-orchestrator/internal/scheduler"
 	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
+	"github.com/spf13/viper"
 )
 
 func main() {
+	loadConfig()
+
 	// Logger setup
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
 
-	// Read port from env or use default
-	port := os.Getenv("SCHEDULER_PORT")
-	if port == "" {
-		port = "50051"
-	}
-	addr := ":" + port
-
 	// Start TCP listener
-	lis, err := net.Listen("tcp", addr)
+	schedulerHost := viper.GetString("scheduler.host")
+	lis, err := net.Listen("tcp", schedulerHost)
 	if err != nil {
 		logger.Fatal("Failed to listen", zap.Error(err))
 	}
-	logger.Info("Scheduler listening", zap.String("addr", addr))
 
 	// gRPC server
 	grpcServer := grpc.NewServer()
@@ -41,9 +38,21 @@ func main() {
 
 	// Start job dispatcher in background
 	srv.Dispatcher.Run()
+	logger.Info("Scheduler listening", zap.String("addr", schedulerHost))
 
 	// Serve
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatal("Failed to serve", zap.Error(err))
+	}
+}
+
+func loadConfig() {
+	path := os.Getenv("CONFIG_PATH")
+	if path == "" {
+		path = "config/dev.yaml"
+	}
+	viper.SetConfigFile(path)
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Failed to read config: %v", err)
 	}
 }
