@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
-	pb "distributed-orchestrator/proto"
+	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 )
 
 type SchedulerServer struct {
@@ -35,11 +35,11 @@ func (s *SchedulerServer) SubmitJob(ctx context.Context, req *pb.JobRequest) (*p
 	s.Dispatcher.JobQueue <- jobID
 
 	s.Logger.Info("Job submitted", zap.String("job_id", jobID), zap.String("task", req.Task))
-	return &pb.JobResponse{Job_id: jobID}, nil
+	return &pb.JobResponse{JobId: jobID}, nil
 }
 
 func (s *SchedulerServer) GetJobStatus(ctx context.Context, req *pb.JobStatusRequest) (*pb.JobStatusResponse, error) {
-	job, ok := s.Jobs.Get(req.Job_id)
+	job, ok := s.Jobs.Get(req.JobId)
 	if !ok {
 		return &pb.JobStatusResponse{Status: "not_found"}, nil
 	}
@@ -47,13 +47,13 @@ func (s *SchedulerServer) GetJobStatus(ctx context.Context, req *pb.JobStatusReq
 }
 
 func (s *SchedulerServer) RegisterWorker(ctx context.Context, req *pb.RegisterWorkerRequest) (*pb.RegisterWorkerResponse, error) {
-	s.Workers.Register(req.Worker_id, req.Host)
-	s.Logger.Info("Worker registered", zap.String("worker_id", req.Worker_id), zap.String("host", req.Host))
+	s.Workers.Register(req.WorkerId, req.Host)
+	s.Logger.Info("Worker registered", zap.String("worker_id", req.WorkerId), zap.String("host", req.Host))
 	return &pb.RegisterWorkerResponse{Success: true}, nil
 }
 
 func (s *SchedulerServer) SendHeartbeat(ctx context.Context, req *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	alive := s.Workers.Heartbeat(req.Worker_id)
+	alive := s.Workers.Heartbeat(req.WorkerId)
 	return &pb.HeartbeatResponse{Alive: alive}, nil
 }
 
@@ -62,19 +62,19 @@ func (s *SchedulerServer) PullJob(ctx context.Context, req *pb.PullJobRequest) (
 	if job == nil {
 		return &pb.PullJobResponse{Found: false}, nil
 	}
-	s.Logger.Info("Job pulled", zap.String("job_id", job.ID), zap.String("worker", req.Worker_id))
+	s.Logger.Info("Job pulled", zap.String("job_id", job.ID), zap.String("worker", req.WorkerId))
 	return &pb.PullJobResponse{
-		Found:  true,
-		Job_id: job.ID,
-		Task:   job.Task,
-		Args:   job.Args,
+		Found: true,
+		JobId: job.ID,
+		Task:  job.Task,
+		Args:  job.Args,
 	}, nil
 }
 
 func (s *SchedulerServer) CompleteJob(ctx context.Context, req *pb.CompleteJobRequest) (*pb.CompleteJobResponse, error) {
-	ok := s.Jobs.Complete(req.Job_id, req.Result)
+	ok := s.Jobs.Complete(req.JobId, req.Result)
 	if ok {
-		s.Logger.Info("Job completed", zap.String("job_id", req.Job_id))
+		s.Logger.Info("Job completed", zap.String("job_id", req.JobId))
 	}
 	return &pb.CompleteJobResponse{Success: ok}, nil
 }
@@ -86,7 +86,7 @@ func (s *SchedulerServer) ListJobs(ctx context.Context, req *pb.ListJobsRequest)
 	var jobStatuses []*pb.JobStatus
 	for _, j := range s.Jobs.jobs {
 		jobStatuses = append(jobStatuses, &pb.JobStatus{
-			Job_id: j.ID,
+			JobId:  j.ID,
 			Status: j.Status,
 			Result: j.Result,
 		})

@@ -20,4 +20,4 @@ func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
 		tasks: make(map[string]*models.Task),
 	}
-} 
+}

@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"distributed-orchestrator/internal/scheduler"
-	pb "distributed-orchestrator/proto"
+	"github.com/dheeraj-sn/distributed-orchestrator/internal/scheduler"
+	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 )
 
 func main() {
