@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/zap"
 
@@ -93,4 +94,17 @@ func (s *SchedulerServer) ListJobs(ctx context.Context, req *pb.ListJobsRequest)
 	}
 
 	return &pb.ListJobsResponse{Jobs: jobStatuses}, nil
+}
+
+func (s *SchedulerServer) StreamLogs(stream pb.Orchestrator_StreamLogsServer) error {
+	for {
+		entry, err := stream.Recv()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("[Job %s | Worker %s | %s] %s\n", entry.JobId, entry.WorkerId, entry.Timestamp, entry.Message)
+		if err := stream.Send(&pb.LogAck{Received: true}); err != nil {
+			return err
+		}
+	}
 }

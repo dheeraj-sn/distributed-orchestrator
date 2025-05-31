@@ -79,6 +79,18 @@ message JobStatus {
   string result = 3;
 }
 
+// Job log streaming
+message LogEntry {
+  string job_id = 1;
+  string worker_id = 2;
+  string timestamp = 3;
+  string message = 4;
+}
+
+message LogAck {
+  bool received = 1;
+}
+
 // Service definition
 service Orchestrator {
   rpc SubmitJob(JobRequest) returns (JobResponse);
@@ -92,4 +104,7 @@ service Orchestrator {
 
   // New method for TUI dashboard
   rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+
+  // Method for streaming logs from worker to scheduler
+  rpc StreamLogs(stream LogEntry) returns (stream LogAck);
 }

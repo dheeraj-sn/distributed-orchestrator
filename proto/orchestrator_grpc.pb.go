@@ -26,6 +26,7 @@ const (
 	Orchestrator_PullJob_FullMethodName        = "/orchestrator.Orchestrator/PullJob"
 	Orchestrator_CompleteJob_FullMethodName    = "/orchestrator.Orchestrator/CompleteJob"
 	Orchestrator_ListJobs_FullMethodName       = "/orchestrator.Orchestrator/ListJobs"
+	Orchestrator_StreamLogs_FullMethodName     = "/orchestrator.Orchestrator/StreamLogs"
 )
 
 // OrchestratorClient is the client API for Orchestrator service.
@@ -43,6 +44,8 @@ type OrchestratorClient interface {
 	CompleteJob(ctx context.Context, in *CompleteJobRequest, opts ...grpc.CallOption) (*CompleteJobResponse, error)
 	// New method for TUI dashboard
 	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
+	// Method for streaming logs from worker to scheduler
+	StreamLogs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[LogEntry, LogAck], error)
 }
 
 type orchestratorClient struct {
@@ -123,6 +126,19 @@ func (c *orchestratorClient) ListJobs(ctx context.Context, in *ListJobsRequest, 
 	return out, nil
 }
 
+func (c *orchestratorClient) StreamLogs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[LogEntry, LogAck], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Orchestrator_ServiceDesc.Streams[0], Orchestrator_StreamLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[LogEntry, LogAck]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Orchestrator_StreamLogsClient = grpc.BidiStreamingClient[LogEntry, LogAck]
+
 // OrchestratorServer is the server API for Orchestrator service.
 // All implementations must embed UnimplementedOrchestratorServer
 // for forward compatibility.
@@ -138,6 +154,8 @@ type OrchestratorServer interface {
 	CompleteJob(context.Context, *CompleteJobRequest) (*CompleteJobResponse, error)
 	// New method for TUI dashboard
 	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
+	// Method for streaming logs from worker to scheduler
+	StreamLogs(grpc.BidiStreamingServer[LogEntry, LogAck]) error
 	mustEmbedUnimplementedOrchestratorServer()
 }
 
@@ -168,6 +186,9 @@ func (UnimplementedOrchestratorServer) CompleteJob(context.Context, *CompleteJob
 }
 func (UnimplementedOrchestratorServer) ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListJobs not implemented")
+}
+func (UnimplementedOrchestratorServer) StreamLogs(grpc.BidiStreamingServer[LogEntry, LogAck]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamLogs not implemented")
 }
 func (UnimplementedOrchestratorServer) mustEmbedUnimplementedOrchestratorServer() {}
 func (UnimplementedOrchestratorServer) testEmbeddedByValue()                      {}
@@ -316,6 +337,13 @@ func _Orchestrator_ListJobs_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Orchestrator_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(OrchestratorServer).StreamLogs(&grpc.GenericServerStream[LogEntry, LogAck]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Orchestrator_StreamLogsServer = grpc.BidiStreamingServer[LogEntry, LogAck]
+
 // Orchestrator_ServiceDesc is the grpc.ServiceDesc for Orchestrator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -352,6 +380,13 @@ var Orchestrator_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Orchestrator_ListJobs_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamLogs",
+			Handler:       _Orchestrator_StreamLogs_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "proto/orchestrator.proto",
 }
