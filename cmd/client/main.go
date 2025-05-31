@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 )
@@ -24,7 +25,7 @@ func main() {
 	flag.Parse()
 
 	// Connect to scheduler
-	conn, err := grpc.Dial(*schedulerAddr, grpc.WithInsecure())
+	conn, err := grpc.NewClient(*schedulerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
