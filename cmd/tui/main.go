@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"google.golang.org/grpc"
 
-	pb "distributed-orchestrator/proto"
+	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 )
 
 type job struct {
