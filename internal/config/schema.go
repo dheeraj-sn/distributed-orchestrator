@@ -32,7 +32,8 @@ type LoggingConfig struct {
 }
 
 type StorageConfig struct {
-	Backend string `mapstructure:"backend"`
+	Backend  string         `mapstructure:"backend"`
+	Postgres PostgresConfig `mapstructure:"postgres"`
 }
 
 type Config struct {
@@ -42,4 +43,12 @@ type Config struct {
 	Retry     RetryConfig     `mapstructure:"retry"`
 	Logging   LoggingConfig   `mapstructure:"logging"`
 	Storage   StorageConfig   `mapstructure:"storage"`
+}
+
+type PostgresConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Database string `mapstructure:"database"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
 }

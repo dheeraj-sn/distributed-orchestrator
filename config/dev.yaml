@@ -20,8 +20,8 @@ logging:
   level: "debug"
   format: "json"
 
-storage:
-  backend: "memory"
+#storage:
+  #backend: "memory"
   # Uncomment for PostgreSQL
   # backend: "postgres"
   # postgres:
@@ -30,3 +30,12 @@ storage:
   #   database: "orchestrator"
   #   user: "postgres"
   #   password: "postgres" 
+
+storage:
+  backend: "postgres"
+  postgres:
+    host: "localhost"
+    port: 5432
+    database: "orchestrator"
+    user: "postgres"
+    password: "yourpassword"
