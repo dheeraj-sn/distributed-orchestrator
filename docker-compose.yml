@@ -1,28 +1,51 @@
+version: '3.9'
+
 services:
   scheduler:
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    container_name: orchestrator_scheduler
     ports:
       - "50051:50051"
-    container_name: orchestrator_scheduler
+      - "9090:9090"  # Metrics port
+    environment:
+      SCHEDULER_HOST: 0.0.0.0:50051
+      SCHEDULER_METRICS_PORT: 9090
+      LOG_LEVEL: debug
+      LOG_FORMAT: json
+      STORAGE_BACKEND: memory
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    environment:
-      - SCHEDULER_ADDR=scheduler:50051
+    container_name: orchestrator_worker
     depends_on:
       - scheduler
-    container_name: orchestrator_worker
+    ports:
+      - "9091:9091"  # Metrics port
+    environment:
+      WORKER_HOST: 0.0.0.0:50052
+      WORKER_METRICS_PORT: 9091
+      WORKER_CONCURRENCY: 4
+      WORKER_ID: worker-docker-1
+      CLIENT_SCHEDULER_ADDR: scheduler:50051
+      RETRY_MAX_ATTEMPTS: 3
+      RETRY_INITIAL_BACKOFF: 1s
+      RETRY_MAX_BACKOFF: 1m
+      LOG_LEVEL: debug
+      LOG_FORMAT: json
+      STORAGE_BACKEND: memory
 
   client:
     build:
       context: .
       dockerfile: Dockerfile.client
-    environment:
-      - SCHEDULER_ADDR=scheduler:50051
+    container_name: orchestrator_client
     depends_on:
       - scheduler
-    container_name: orchestrator_client
+    environment:
+      CLIENT_SCHEDULER_ADDR: scheduler:50051
+      LOG_LEVEL: debug
+      LOG_FORMAT: json

@@ -8,26 +8,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dheeraj-sn/distributed-orchestrator/internal/config"
+	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
 )
 
 func main() {
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
 	// CLI flags
 	mode := flag.String("mode", "submit", "Mode: submit or status")
 	task := flag.String("task", "echo", "Task name")
 	args := flag.String("args", "hello", "Comma-separated arguments")
 	jobID := flag.String("id", "", "Job ID to check status")
-	schedulerAddr := flag.String("addr", "localhost:50051", "Scheduler gRPC address")
+
+	// Override scheduler address if passed via flag
+	addr := flag.String("addr", cfg.Client.SchedulerAddr, "Scheduler gRPC address")
 
 	flag.Parse()
 
-	// Connect to scheduler
-	conn, err := grpc.NewClient(*schedulerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Connect to the scheduler
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Failed to connect: %v", err)
+		log.Fatalf("Failed to connect to scheduler at %s: %v", *addr, err)
 	}
 	defer conn.Close()
 
@@ -52,9 +61,7 @@ func main() {
 		if *jobID == "" {
 			log.Fatal("Please provide a job ID using -id flag")
 		}
-		res, err := client.GetJobStatus(ctx, &pb.JobStatusRequest{
-			JobId: *jobID,
-		})
+		res, err := client.GetJobStatus(ctx, &pb.JobStatusRequest{JobId: *jobID})
 		if err != nil {
 			log.Fatalf("Status check failed: %v", err)
 		}
@@ -62,6 +69,7 @@ func main() {
 		if res.Result != "" {
 			fmt.Printf("📝 Result: %s\n", res.Result)
 		}
+
 	default:
 		log.Fatalf("Unknown mode: %s", *mode)
 	}
@@ -71,23 +79,17 @@ func splitArgs(raw string) []string {
 	if raw == "" {
 		return []string{}
 	}
-	var result []string
-	result = append(result, splitAndTrim(raw, ",")...)
-	return result
+	return splitAndTrim(raw, ",")
 }
 
 func splitAndTrim(s, sep string) []string {
-	var result []string
-	for _, part := range split(s, sep) {
-		result = append(result, trim(part))
+	parts := strings.Split(s, sep)
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
 	}
 	return result
-}
-
-func split(s, sep string) []string {
-	return strings.Split(s, sep)
-}
-
-func trim(s string) string {
-	return strings.TrimSpace(s)
 }

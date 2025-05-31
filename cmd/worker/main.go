@@ -7,50 +7,72 @@ import (
 	"os"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/dheeraj-sn/distributed-orchestrator/internal/config"
+	"github.com/dheeraj-sn/distributed-orchestrator/internal/worker"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/dheeraj-sn/distributed-orchestrator/internal/worker"
 )
 
 func main() {
-	loadConfig()
+	// Load config
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
-	logger, _ := zap.NewDevelopment()
+	// Setup logger
+	var zapCfg zap.Config
+	if cfg.Logging.Format == "json" {
+		zapCfg = zap.NewProductionConfig()
+	} else {
+		zapCfg = zap.NewDevelopmentConfig()
+	}
+	if err := zapCfg.Level.UnmarshalText([]byte(cfg.Logging.Level)); err != nil {
+		log.Fatalf("Invalid log level: %v", err)
+	}
+	zapCfg.EncoderConfig.TimeKey = "timestamp"
+	zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	workerID := generateWorkerID()
-	logger.Info("Generated random worker ID", zap.String("worker_id", workerID))
+	logger, err := zapCfg.Build()
+	if err != nil {
+		log.Fatalf("Failed to build logger: %v", err)
+	}
+	defer logger.Sync()
 
-	schedulerAddr := viper.GetString("scheduler.host")
+	// Generate worker ID if not set
+	workerID := cfg.Worker.WorkerID
+	if workerID == "" || workerID == "worker-default" {
+		workerID = generateWorkerID()
+		logger.Info("Generated random worker ID", zap.String("worker_id", workerID))
+	}
 
+	// Connect to scheduler
+	schedulerAddr := cfg.Client.SchedulerAddr
 	conn, err := grpc.NewClient(schedulerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Fatal("Failed to create client", zap.Error(err))
+		logger.Fatal("Failed to connect to scheduler", zap.Error(err))
 	}
 	defer conn.Close()
 
-	w := worker.NewWorker(workerID, viper.GetString("worker.host"), conn, logger, viper.GetInt("worker.concurrency"))
+	// Create and start worker
+	w := worker.NewWorker(
+		workerID,
+		cfg.Worker.Host,
+		conn,
+		logger,
+		cfg.Worker.Concurrency,
+	)
+
 	if err := w.Register(); err != nil {
-		logger.Fatal("Registration failed", zap.Error(err))
+		logger.Fatal("Worker registration failed", zap.Error(err))
 	}
 
 	w.StartHeartbeat(10)
 	w.StartExecutorLoop(3)
 
 	select {}
-}
-
-func loadConfig() {
-	path := os.Getenv("CONFIG_PATH")
-	if path == "" {
-		path = "config/dev.yaml"
-	}
-	viper.SetConfigFile(path)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config: %v", err)
-	}
 }
 
 func generateWorkerID() string {

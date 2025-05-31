@@ -3,56 +3,62 @@ package main
 import (
 	"log"
 	"net"
-	"os"
 
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-
+	"github.com/dheeraj-sn/distributed-orchestrator/internal/config"
 	"github.com/dheeraj-sn/distributed-orchestrator/internal/scheduler"
 	pb "github.com/dheeraj-sn/distributed-orchestrator/proto"
-	"github.com/spf13/viper"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	loadConfig()
+	// Load nested config
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
-	// Logger setup
-	logger, _ := zap.NewDevelopment()
+	// Set up structured logger using config
+	var zapCfg zap.Config
+	if cfg.Logging.Format == "json" {
+		zapCfg = zap.NewProductionConfig()
+	} else {
+		zapCfg = zap.NewDevelopmentConfig()
+	}
+	if err := zapCfg.Level.UnmarshalText([]byte(cfg.Logging.Level)); err != nil {
+		log.Fatalf("Invalid log level: %v", err)
+	}
+	zapCfg.EncoderConfig.TimeKey = "timestamp"
+	zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	logger, err := zapCfg.Build()
+	if err != nil {
+		log.Fatalf("Failed to build logger: %v", err)
+	}
 	defer logger.Sync()
 
 	// Start TCP listener
-	schedulerHost := viper.GetString("scheduler.host")
-	lis, err := net.Listen("tcp", schedulerHost)
+	lis, err := net.Listen("tcp", cfg.Scheduler.Host)
 	if err != nil {
 		logger.Fatal("Failed to listen", zap.Error(err))
 	}
 
-	// gRPC server
+	// gRPC server setup
 	grpcServer := grpc.NewServer()
 
-	// Initialize scheduler logic
+	// Initialize scheduler logic and register gRPC service
 	srv := scheduler.NewSchedulerServer(logger)
-
-	// Register gRPC service
 	pb.RegisterOrchestratorServer(grpcServer, srv)
 
-	// Start job dispatcher in background
+	// Start job dispatcher loop in background
 	srv.Dispatcher.Run()
-	logger.Info("Scheduler listening", zap.String("addr", schedulerHost))
 
-	// Serve
+	logger.Info("Scheduler listening", zap.String("addr", cfg.Scheduler.Host))
+
+	// Serve gRPC
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatal("Failed to serve", zap.Error(err))
-	}
-}
-
-func loadConfig() {
-	path := os.Getenv("CONFIG_PATH")
-	if path == "" {
-		path = "config/dev.yaml"
-	}
-	viper.SetConfigFile(path)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config: %v", err)
 	}
 }
