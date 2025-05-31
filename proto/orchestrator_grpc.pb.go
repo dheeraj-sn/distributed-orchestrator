@@ -25,6 +25,7 @@ const (
 	Orchestrator_SendHeartbeat_FullMethodName  = "/orchestrator.Orchestrator/SendHeartbeat"
 	Orchestrator_PullJob_FullMethodName        = "/orchestrator.Orchestrator/PullJob"
 	Orchestrator_CompleteJob_FullMethodName    = "/orchestrator.Orchestrator/CompleteJob"
+	Orchestrator_ListJobs_FullMethodName       = "/orchestrator.Orchestrator/ListJobs"
 )
 
 // OrchestratorClient is the client API for Orchestrator service.
@@ -40,6 +41,8 @@ type OrchestratorClient interface {
 	// New methods for worker pull-complete flow
 	PullJob(ctx context.Context, in *PullJobRequest, opts ...grpc.CallOption) (*PullJobResponse, error)
 	CompleteJob(ctx context.Context, in *CompleteJobRequest, opts ...grpc.CallOption) (*CompleteJobResponse, error)
+	// New method for TUI dashboard
+	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
 }
 
 type orchestratorClient struct {
@@ -110,6 +113,16 @@ func (c *orchestratorClient) CompleteJob(ctx context.Context, in *CompleteJobReq
 	return out, nil
 }
 
+func (c *orchestratorClient) ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListJobsResponse)
+	err := c.cc.Invoke(ctx, Orchestrator_ListJobs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrchestratorServer is the server API for Orchestrator service.
 // All implementations must embed UnimplementedOrchestratorServer
 // for forward compatibility.
@@ -123,6 +136,8 @@ type OrchestratorServer interface {
 	// New methods for worker pull-complete flow
 	PullJob(context.Context, *PullJobRequest) (*PullJobResponse, error)
 	CompleteJob(context.Context, *CompleteJobRequest) (*CompleteJobResponse, error)
+	// New method for TUI dashboard
+	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
 	mustEmbedUnimplementedOrchestratorServer()
 }
 
@@ -150,6 +165,9 @@ func (UnimplementedOrchestratorServer) PullJob(context.Context, *PullJobRequest)
 }
 func (UnimplementedOrchestratorServer) CompleteJob(context.Context, *CompleteJobRequest) (*CompleteJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CompleteJob not implemented")
+}
+func (UnimplementedOrchestratorServer) ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListJobs not implemented")
 }
 func (UnimplementedOrchestratorServer) mustEmbedUnimplementedOrchestratorServer() {}
 func (UnimplementedOrchestratorServer) testEmbeddedByValue()                      {}
@@ -280,6 +298,24 @@ func _Orchestrator_CompleteJob_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Orchestrator_ListJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListJobsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrchestratorServer).ListJobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Orchestrator_ListJobs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrchestratorServer).ListJobs(ctx, req.(*ListJobsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Orchestrator_ServiceDesc is the grpc.ServiceDesc for Orchestrator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,6 +346,10 @@ var Orchestrator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompleteJob",
 			Handler:    _Orchestrator_CompleteJob_Handler,
+		},
+		{
+			MethodName: "ListJobs",
+			Handler:    _Orchestrator_ListJobs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

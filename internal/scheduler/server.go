@@ -43,7 +43,7 @@ func (s *SchedulerServer) GetJobStatus(ctx context.Context, req *pb.JobStatusReq
 	if !ok {
 		return &pb.JobStatusResponse{Status: "not_found"}, nil
 	}
-	return &pb.JobStatusResponse{Status: job.Status}, nil
+	return &pb.JobStatusResponse{Status: job.Status, Result: job.Result}, nil
 }
 
 func (s *SchedulerServer) RegisterWorker(ctx context.Context, req *pb.RegisterWorkerRequest) (*pb.RegisterWorkerResponse, error) {
@@ -77,4 +77,20 @@ func (s *SchedulerServer) CompleteJob(ctx context.Context, req *pb.CompleteJobRe
 		s.Logger.Info("Job completed", zap.String("job_id", req.Job_id))
 	}
 	return &pb.CompleteJobResponse{Success: ok}, nil
+}
+
+func (s *SchedulerServer) ListJobs(ctx context.Context, req *pb.ListJobsRequest) (*pb.ListJobsResponse, error) {
+	s.Jobs.mu.RLock()
+	defer s.Jobs.mu.RUnlock()
+
+	var jobStatuses []*pb.JobStatus
+	for _, j := range s.Jobs.jobs {
+		jobStatuses = append(jobStatuses, &pb.JobStatus{
+			Job_id: j.ID,
+			Status: j.Status,
+			Result: j.Result,
+		})
+	}
+
+	return &pb.ListJobsResponse{Jobs: jobStatuses}, nil
 }

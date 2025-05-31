@@ -612,6 +612,147 @@ func (x *CompleteJobResponse) GetSuccess() bool {
 	return false
 }
 
+// New: Job listing
+type ListJobsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListJobsRequest) Reset() {
+	*x = ListJobsRequest{}
+	mi := &file_proto_orchestrator_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListJobsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListJobsRequest) ProtoMessage() {}
+
+func (x *ListJobsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_orchestrator_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListJobsRequest.ProtoReflect.Descriptor instead.
+func (*ListJobsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_orchestrator_proto_rawDescGZIP(), []int{12}
+}
+
+type ListJobsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Jobs          []*JobStatus           `protobuf:"bytes,1,rep,name=jobs,proto3" json:"jobs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListJobsResponse) Reset() {
+	*x = ListJobsResponse{}
+	mi := &file_proto_orchestrator_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListJobsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListJobsResponse) ProtoMessage() {}
+
+func (x *ListJobsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_orchestrator_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListJobsResponse.ProtoReflect.Descriptor instead.
+func (*ListJobsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_orchestrator_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListJobsResponse) GetJobs() []*JobStatus {
+	if x != nil {
+		return x.Jobs
+	}
+	return nil
+}
+
+type JobStatus struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Result        string                 `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JobStatus) Reset() {
+	*x = JobStatus{}
+	mi := &file_proto_orchestrator_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JobStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JobStatus) ProtoMessage() {}
+
+func (x *JobStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_orchestrator_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JobStatus.ProtoReflect.Descriptor instead.
+func (*JobStatus) Descriptor() ([]byte, []int) {
+	return file_proto_orchestrator_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *JobStatus) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *JobStatus) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *JobStatus) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
 var File_proto_orchestrator_proto protoreflect.FileDescriptor
 
 const file_proto_orchestrator_proto_rawDesc = "" +
@@ -648,14 +789,22 @@ const file_proto_orchestrator_proto_rawDesc = "" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\tR\x06result\"/\n" +
 	"\x13CompleteJobResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xec\x03\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x11\n" +
+	"\x0fListJobsRequest\"?\n" +
+	"\x10ListJobsResponse\x12+\n" +
+	"\x04jobs\x18\x01 \x03(\v2\x17.orchestrator.JobStatusR\x04jobs\"R\n" +
+	"\tJobStatus\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x16\n" +
+	"\x06result\x18\x03 \x01(\tR\x06result2\xb7\x04\n" +
 	"\fOrchestrator\x12@\n" +
 	"\tSubmitJob\x12\x18.orchestrator.JobRequest\x1a\x19.orchestrator.JobResponse\x12O\n" +
 	"\fGetJobStatus\x12\x1e.orchestrator.JobStatusRequest\x1a\x1f.orchestrator.JobStatusResponse\x12[\n" +
 	"\x0eRegisterWorker\x12#.orchestrator.RegisterWorkerRequest\x1a$.orchestrator.RegisterWorkerResponse\x12P\n" +
 	"\rSendHeartbeat\x12\x1e.orchestrator.HeartbeatRequest\x1a\x1f.orchestrator.HeartbeatResponse\x12F\n" +
 	"\aPullJob\x12\x1c.orchestrator.PullJobRequest\x1a\x1d.orchestrator.PullJobResponse\x12R\n" +
-	"\vCompleteJob\x12 .orchestrator.CompleteJobRequest\x1a!.orchestrator.CompleteJobResponseB Z\x1edistributed-orchestrator/protob\x06proto3"
+	"\vCompleteJob\x12 .orchestrator.CompleteJobRequest\x1a!.orchestrator.CompleteJobResponse\x12I\n" +
+	"\bListJobs\x12\x1d.orchestrator.ListJobsRequest\x1a\x1e.orchestrator.ListJobsResponseB Z\x1edistributed-orchestrator/protob\x06proto3"
 
 var (
 	file_proto_orchestrator_proto_rawDescOnce sync.Once
@@ -669,7 +818,7 @@ func file_proto_orchestrator_proto_rawDescGZIP() []byte {
 	return file_proto_orchestrator_proto_rawDescData
 }
 
-var file_proto_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_proto_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_proto_orchestrator_proto_goTypes = []any{
 	(*JobRequest)(nil),             // 0: orchestrator.JobRequest
 	(*JobResponse)(nil),            // 1: orchestrator.JobResponse
@@ -683,25 +832,31 @@ var file_proto_orchestrator_proto_goTypes = []any{
 	(*PullJobResponse)(nil),        // 9: orchestrator.PullJobResponse
 	(*CompleteJobRequest)(nil),     // 10: orchestrator.CompleteJobRequest
 	(*CompleteJobResponse)(nil),    // 11: orchestrator.CompleteJobResponse
+	(*ListJobsRequest)(nil),        // 12: orchestrator.ListJobsRequest
+	(*ListJobsResponse)(nil),       // 13: orchestrator.ListJobsResponse
+	(*JobStatus)(nil),              // 14: orchestrator.JobStatus
 }
 var file_proto_orchestrator_proto_depIdxs = []int32{
-	0,  // 0: orchestrator.Orchestrator.SubmitJob:input_type -> orchestrator.JobRequest
-	2,  // 1: orchestrator.Orchestrator.GetJobStatus:input_type -> orchestrator.JobStatusRequest
-	4,  // 2: orchestrator.Orchestrator.RegisterWorker:input_type -> orchestrator.RegisterWorkerRequest
-	6,  // 3: orchestrator.Orchestrator.SendHeartbeat:input_type -> orchestrator.HeartbeatRequest
-	8,  // 4: orchestrator.Orchestrator.PullJob:input_type -> orchestrator.PullJobRequest
-	10, // 5: orchestrator.Orchestrator.CompleteJob:input_type -> orchestrator.CompleteJobRequest
-	1,  // 6: orchestrator.Orchestrator.SubmitJob:output_type -> orchestrator.JobResponse
-	3,  // 7: orchestrator.Orchestrator.GetJobStatus:output_type -> orchestrator.JobStatusResponse
-	5,  // 8: orchestrator.Orchestrator.RegisterWorker:output_type -> orchestrator.RegisterWorkerResponse
-	7,  // 9: orchestrator.Orchestrator.SendHeartbeat:output_type -> orchestrator.HeartbeatResponse
-	9,  // 10: orchestrator.Orchestrator.PullJob:output_type -> orchestrator.PullJobResponse
-	11, // 11: orchestrator.Orchestrator.CompleteJob:output_type -> orchestrator.CompleteJobResponse
-	6,  // [6:12] is the sub-list for method output_type
-	0,  // [0:6] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	14, // 0: orchestrator.ListJobsResponse.jobs:type_name -> orchestrator.JobStatus
+	0,  // 1: orchestrator.Orchestrator.SubmitJob:input_type -> orchestrator.JobRequest
+	2,  // 2: orchestrator.Orchestrator.GetJobStatus:input_type -> orchestrator.JobStatusRequest
+	4,  // 3: orchestrator.Orchestrator.RegisterWorker:input_type -> orchestrator.RegisterWorkerRequest
+	6,  // 4: orchestrator.Orchestrator.SendHeartbeat:input_type -> orchestrator.HeartbeatRequest
+	8,  // 5: orchestrator.Orchestrator.PullJob:input_type -> orchestrator.PullJobRequest
+	10, // 6: orchestrator.Orchestrator.CompleteJob:input_type -> orchestrator.CompleteJobRequest
+	12, // 7: orchestrator.Orchestrator.ListJobs:input_type -> orchestrator.ListJobsRequest
+	1,  // 8: orchestrator.Orchestrator.SubmitJob:output_type -> orchestrator.JobResponse
+	3,  // 9: orchestrator.Orchestrator.GetJobStatus:output_type -> orchestrator.JobStatusResponse
+	5,  // 10: orchestrator.Orchestrator.RegisterWorker:output_type -> orchestrator.RegisterWorkerResponse
+	7,  // 11: orchestrator.Orchestrator.SendHeartbeat:output_type -> orchestrator.HeartbeatResponse
+	9,  // 12: orchestrator.Orchestrator.PullJob:output_type -> orchestrator.PullJobResponse
+	11, // 13: orchestrator.Orchestrator.CompleteJob:output_type -> orchestrator.CompleteJobResponse
+	13, // 14: orchestrator.Orchestrator.ListJobs:output_type -> orchestrator.ListJobsResponse
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_orchestrator_proto_init() }
@@ -715,7 +870,7 @@ func file_proto_orchestrator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_orchestrator_proto_rawDesc), len(file_proto_orchestrator_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

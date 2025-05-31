@@ -66,6 +66,19 @@ message CompleteJobResponse {
   bool success = 1;
 }
 
+// New: Job listing
+message ListJobsRequest {}
+
+message ListJobsResponse {
+  repeated JobStatus jobs = 1;
+}
+
+message JobStatus {
+  string job_id = 1;
+  string status = 2;
+  string result = 3;
+}
+
 // Service definition
 service Orchestrator {
   rpc SubmitJob(JobRequest) returns (JobResponse);
@@ -76,4 +89,7 @@ service Orchestrator {
   // New methods for worker pull-complete flow
   rpc PullJob(PullJobRequest) returns (PullJobResponse);
   rpc CompleteJob(CompleteJobRequest) returns (CompleteJobResponse);
+
+  // New method for TUI dashboard
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
 }
