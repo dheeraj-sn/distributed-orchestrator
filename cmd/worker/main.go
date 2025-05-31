@@ -31,7 +31,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	w := worker.NewWorker(workerID, viper.GetString("worker.host"), conn, logger)
+	w := worker.NewWorker(workerID, viper.GetString("worker.host"), conn, logger, viper.GetInt("worker.concurrency"))
 	if err := w.Register(); err != nil {
 		logger.Fatal("Registration failed", zap.Error(err))
 	}

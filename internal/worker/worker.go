@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -14,21 +15,26 @@ import (
 )
 
 type Worker struct {
-	ID       string
-	Host     string
-	Client   pb.OrchestratorClient
-	Logger   *zap.Logger
-	stopChan chan struct{}
+	ID          string
+	Host        string
+	Client      pb.OrchestratorClient
+	Logger      *zap.Logger
+	stopChan    chan struct{}
+	concurrency int
+	sem         chan struct{}
+	wg          sync.WaitGroup
 }
 
-func NewWorker(id, host string, conn *grpc.ClientConn, logger *zap.Logger) *Worker {
+func NewWorker(id, host string, conn *grpc.ClientConn, logger *zap.Logger, concurrency int) *Worker {
 	client := pb.NewOrchestratorClient(conn)
 	return &Worker{
-		ID:       id,
-		Host:     host,
-		Client:   client,
-		Logger:   logger,
-		stopChan: make(chan struct{}),
+		ID:          id,
+		Host:        host,
+		Client:      client,
+		Logger:      logger,
+		stopChan:    make(chan struct{}),
+		concurrency: concurrency,
+		sem:         make(chan struct{}, concurrency),
 	}
 }
 
@@ -68,6 +74,7 @@ func (w *Worker) StartHeartbeat(interval time.Duration) {
 func (w *Worker) Stop() {
 	close(w.stopChan)
 	w.Logger.Info("Worker shutting down", zap.String("id", w.ID))
+	w.wg.Wait()
 }
 
 func (w *Worker) StartExecutorLoop(pollInterval time.Duration) {
@@ -88,28 +95,32 @@ func (w *Worker) StartExecutorLoop(pollInterval time.Duration) {
 					continue
 				}
 
-				jobID := resp.JobId
-				task := resp.Task
-				args := resp.Args
+				w.sem <- struct{}{}
+				w.wg.Add(1)
 
-				w.Logger.Info("Pulled job", zap.String("id", jobID), zap.String("task", task))
+				go func(jobID, task string, args []string) {
+					defer func() {
+						<-w.sem
+						w.wg.Done()
+					}()
 
-				// Simulate task execution
-				result := fmt.Sprintf("Executed task %s with args %v", task, args)
-				time.Sleep(2 * time.Second)
+					w.Logger.Info("Pulled job", zap.String("id", jobID), zap.String("task", task))
+					result := fmt.Sprintf("Executed task %s with args %v", task, args)
+					time.Sleep(2 * time.Second)
 
-				ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-				_, err = w.Client.CompleteJob(ctx, &pb.CompleteJobRequest{
-					JobId:  jobID,
-					Result: result,
-				})
-				cancel()
+					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					_, err := w.Client.CompleteJob(ctx, &pb.CompleteJobRequest{
+						JobId:  jobID,
+						Result: result,
+					})
+					cancel()
 
-				if err != nil {
-					w.Logger.Error("Failed to complete job", zap.Error(err))
-				} else {
-					w.Logger.Info("Reported job completion", zap.String("job_id", jobID))
-				}
+					if err != nil {
+						w.Logger.Error("Failed to complete job", zap.Error(err))
+					} else {
+						w.Logger.Info("Reported job completion", zap.String("job_id", jobID))
+					}
+				}(resp.JobId, resp.Task, resp.Args)
 			}
 		}
 	}()
@@ -120,5 +131,5 @@ func WaitForShutdown(w *Worker) {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
 	w.Stop()
-	time.Sleep(1 * time.Second) // let background goroutines finish
+	time.Sleep(1 * time.Second)
 }
