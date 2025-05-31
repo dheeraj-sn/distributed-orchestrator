@@ -77,3 +77,38 @@ func (w *Worker) StartMockExecutor() {
 func (w *Worker) Stop() {
 	close(w.stopChan)
 }
+
+func (w *Worker) StartExecutorLoop(pollInterval time.Duration) {
+	go func() {
+		for {
+			time.Sleep(pollInterval)
+
+			resp, err := w.Client.PullJob(context.Background(), &pb.PullJobRequest{
+				Worker_id: w.ID,
+			})
+			if err != nil || !resp.Found {
+				continue
+			}
+
+			jobID := resp.Job_id
+			task := resp.Task
+			args := resp.Args
+
+			w.Logger.Info("Pulled job", zap.String("id", jobID), zap.String("task", task))
+
+			// Simulate task execution
+			result := fmt.Sprintf("Executed task %s with args %v", task, args)
+			time.Sleep(2 * time.Second) // Simulate work
+
+			_, err = w.Client.CompleteJob(context.Background(), &pb.CompleteJobRequest{
+				Job_id: jobID,
+				Result: result,
+			})
+			if err != nil {
+				w.Logger.Error("Failed to complete job", zap.Error(err))
+			} else {
+				w.Logger.Info("Reported job completion", zap.String("job_id", jobID))
+			}
+		}
+	}()
+}

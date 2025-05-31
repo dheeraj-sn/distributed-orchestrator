@@ -56,3 +56,25 @@ func (s *SchedulerServer) SendHeartbeat(ctx context.Context, req *pb.HeartbeatRe
 	alive := s.Workers.Heartbeat(req.Worker_id)
 	return &pb.HeartbeatResponse{Alive: alive}, nil
 }
+
+func (s *SchedulerServer) PullJob(ctx context.Context, req *pb.PullJobRequest) (*pb.PullJobResponse, error) {
+	job := s.Dispatcher.NextJob()
+	if job == nil {
+		return &pb.PullJobResponse{Found: false}, nil
+	}
+	s.Logger.Info("Job pulled", zap.String("job_id", job.ID), zap.String("worker", req.Worker_id))
+	return &pb.PullJobResponse{
+		Found:  true,
+		Job_id: job.ID,
+		Task:   job.Task,
+		Args:   job.Args,
+	}, nil
+}
+
+func (s *SchedulerServer) CompleteJob(ctx context.Context, req *pb.CompleteJobRequest) (*pb.CompleteJobResponse, error) {
+	ok := s.Jobs.Complete(req.Job_id, req.Result)
+	if ok {
+		s.Logger.Info("Job completed", zap.String("job_id", req.Job_id))
+	}
+	return &pb.CompleteJobResponse{Success: ok}, nil
+}

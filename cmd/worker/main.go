@@ -37,7 +37,7 @@ func main() {
 	}
 
 	w.StartHeartbeat(10 * time.Second)
-	w.StartMockExecutor()
+	w.StartExecutorLoop(3 * time.Second)
 
 	select {} // block forever
 }

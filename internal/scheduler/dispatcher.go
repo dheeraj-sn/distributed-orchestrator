@@ -35,3 +35,16 @@ func (d *Dispatcher) Run() {
 		}
 	}()
 }
+
+func (d *Dispatcher) NextJob() *Job {
+	d.JobManager.mu.Lock()
+	defer d.JobManager.mu.Unlock()
+
+	for _, job := range d.JobManager.jobs {
+		if job.Status == "queued" {
+			job.Status = "in_progress"
+			return job
+		}
+	}
+	return nil
+}

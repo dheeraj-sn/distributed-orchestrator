@@ -45,3 +45,14 @@ func (jm *JobManager) SetStatus(id, status string) {
 		job.Status = status
 	}
 }
+
+func (jm *JobManager) Complete(id string, result string) bool {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+	if job, ok := jm.jobs[id]; ok {
+		job.Status = "completed"
+		job.Result = result
+		return true
+	}
+	return false
+}
