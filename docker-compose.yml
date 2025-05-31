@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    ports:
+      - "50051:50051"
+    container_name: orchestrator_scheduler
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      - SCHEDULER_ADDR=scheduler:50051
+    depends_on:
+      - scheduler
+    container_name: orchestrator_worker
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    environment:
+      - SCHEDULER_ADDR=scheduler:50051
+    depends_on:
+      - scheduler
+    container_name: orchestrator_client

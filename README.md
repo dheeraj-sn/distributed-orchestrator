@@ -37,7 +37,7 @@ distributed-orchestrator/
 │   │   ├── dispatcher.go
 │   │   └── state.go
 │   ├── worker/           # Worker logic
-│   │   └── runner.go
+│   │   └── worker.go
 │   ├── models/           # Task and job types
 │   │   └── task.go
 │   └── storage/          # Persistence (in-memory or DB)

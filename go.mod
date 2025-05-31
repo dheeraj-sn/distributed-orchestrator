@@ -1,6 +1,6 @@
 module github.com/dheeraj-sn/distributed-orchestrator
 
-go 1.24
+go 1.24.3
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.5
